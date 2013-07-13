@@ -6,13 +6,13 @@ Gem::Specification.new do |gem|
   gem.email         = ["johntdyer@gmail.com"]
   gem.description   = %q{Thor tasks to package a project}
   gem.summary       = %q{Set of tasks to assist in making packages from a git controlled project.}
-  gem.homepage      = ""
+  gem.homepage      = "https://github.com/johntdyer/thor-tropo"
 
   gem.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   gem.files         = `git ls-files`.split("\n")
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   gem.name          = "thor-tropo"
-  gem.require_paths = ["lib"]
+  gem.require_paths = ["lib","bin"]
   gem.version       = ThorTropo::VERSION
 
   gem.add_dependency 'json', ">= 1.7.0"
