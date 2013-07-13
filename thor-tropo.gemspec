@@ -13,10 +13,16 @@ Gem::Specification.new do |gem|
   gem.test_files    = `git ls-files -- {test,spec,features}/*`.split("\n")
   gem.name          = "thor-tropo"
   gem.require_paths = ["lib"]
-  gem.version       = ThorPackage::VERSION
+  gem.version       = ThorTropo::VERSION
 
-  gem.add_dependency             'thor'
-  gem.add_development_dependency 'thor-scmversion'
+  gem.add_dependency 'json', ">= 1.7.0"
+  gem.add_dependency 'thor'
+  gem.add_dependency 'chef', "~> 11.0"
+  gem.add_dependency 'berkshelf'
+  gem.add_dependency 'thor-scmversion'
+  gem.add_dependency 'minitar',           '~> 0.5.4'
+
+  gem.add_development_dependency 'foodcritic'
   gem.add_development_dependency 'webmock'
   gem.add_development_dependency 'spork'
   gem.add_development_dependency 'simplecov'
