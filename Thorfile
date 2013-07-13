@@ -3,6 +3,7 @@ $:.unshift File.expand_path('../lib', __FILE__)
 
 require 'bundler'
 require 'thor/rake_compat'
+require 'thor/scmversion'
 require 'thor-tropo'
 class Gem < Thor
   include Thor::RakeCompat
