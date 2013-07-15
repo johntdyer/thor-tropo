@@ -1,19 +1,28 @@
+module ThorTropo
+
+
+$:.unshift  File.expand_path('../thor-tropo', __FILE__)
+
 require 'thor'
 require 'thor/actions'
 require 'thor/scmversion'
 require 'tmpdir'
 require 'archive/tar/minitar'
 require 'zlib'
-#require 'thor/foodcritic'
+
 require 'berkshelf/thor'
 require 'berkshelf/chef'
+require 'digest/md5'
+require 'aws/s3'
+
+require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
 
 
-module ThorTropo
+
   class Tasks < Thor
     include Thor::Actions
 
-
+    @packaged_cookbook = nil
     class_option :called_path,
       :type => :string,
       :default => Dir.pwd
@@ -40,6 +49,7 @@ module ThorTropo
       end
 
       bundle_cookbook
+     # upload_cookbook @packaged_cookbook, "test"
       #  tag_version {
       #    publish_cookbook(options)
       #  }
@@ -59,25 +69,32 @@ module ThorTropo
 
     no_tasks do
 
+      def upload_cookbook(local_file,path)
+        @uploader = ThorTropo::Uploader.new
+        @uploader.upload :local_file => local_file, :path => path
+      end
+
       def clean?
         sh_with_excode("git diff --exit-codeBerkshelf")[1] == 0
       end
 
       def bundle_cookbook
-        tmp = Dir.mktmpdir
+        @tmp_dir = Dir.mktmpdir
         opts = {
           berksfile: File.join(options[:called_path],"/Berksfile"),
-          path: "#{tmp}/cookbooks"
+          path: "#{@tmp_dir}/cookbooks"
         }
 
         invoke("berkshelf:install", [], opts)
-        output   = File.expand_path(File.join(Dir.home, "#{options[:called_path].split("/")[-1]}-#{current_version}.tar.gz"))
+        output   = File.expand_path(File.join(@tmp_dir, "#{options[:called_path].split("/")[-1]}-#{current_version}.tar.gz"))
 
 
-        Dir.chdir(tmp) do |dir|
+        Dir.chdir(@tmp_dir) do |dir|
           tgz = Zlib::GzipWriter.new(File.open(output, 'wb'))
           Archive::Tar::Minitar.pack('./cookbooks', tgz)
         end
+        @packaged_cookbook = output
+
       end
 
       def current_version
