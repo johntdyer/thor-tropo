@@ -22,20 +22,12 @@ module ThorTropo
 
     namespace "tropo"
 
-    # class_option :called_path,
-    #   :type => :string,
-    #   :default => Dir.pwd
     class_option :called_path,
       :type    => :string,
       :aliases => "-d",
       :default => Dir.pwd,
       :desc    => "Directory of your Berksfile",
       :banner  => "Directory of your Berksfile"
-
-    class_option :verbose,
-      :type => :boolean,
-      :aliases => "-v",
-      :default => false
 
     desc "package", "Package cookbooks and upload to S3"
 
@@ -92,25 +84,6 @@ module ThorTropo
 
     end
 
-
-
-    # def version
-    #   OLDVERSION=`sed -n -e "s/version.*\"\(.*\)\"/\1/p" metadata.rb`
-    #   sed -ie "s/\(version *\)\".*\"/\1\"$OLDVERSION\"/" metadata.rb
-    #   git add metadata.rb
-    # end
-
-    # desc "build", "Package cookbook"
-
-    # def build
-    #   cleanup
-    #   run "git archive --format=tar -o #{pkg_path}/tarfile HEAD"
-    #   run "tar rf #{pkg_path}/tarfile VERSION" # Stick VERSION in the tar
-    #   run "gzip -9 #{pkg_path}/tarfile"
-    #   FileUtils.mv "#{pkg_path}/tarfile.gz", artifact_path
-    #   say "Built #{artifact_path}"
-    # end
-
     no_tasks do
 
       def upload_cookbook(local_file,path,opts={})
@@ -153,7 +126,7 @@ module ThorTropo
 
         invoke("berkshelf:install", [], opts)
         #output   = File.expand_path(File.join(@tmp_dir, "#{options[:called_path].split("/")[-1]}-#{current_version}.tar.gz"))
-        output   = File.expand_path(File.join(@tmp_dir, "#{source_root.split("/")[-1]}-#{current_version}.tar.gz"))
+        output   = File.expand_path(File.join(@tmp_dir, "#{cookbook_name}-#{current_version}.tar.gz"))
 
         Dir.chdir(@tmp_dir) do |dir|
           tgz = Zlib::GzipWriter.new(File.open(output, 'wb'))
@@ -161,6 +134,10 @@ module ThorTropo
         end
         @packaged_cookbook = output
 
+      end
+
+      def cookbook_name
+        source_root.split("/")[-1]
       end
 
       def current_version
@@ -185,8 +162,7 @@ module ThorTropo
         exit 1
       end
 
-
-      ## Get the directory Thor script was called from
+      ## Get the directory to Berksfile
       def source_root
 
         berks_path = File.expand_path(options[:called_path])
@@ -195,7 +171,6 @@ module ThorTropo
         else
           raise Errno::ENOENT, "#{berks_path} does not contain a Berksfile"
         end
-        #File.expand_path(Dir.pwd)
       end
 
       def sh(cmd, dir = source_root, &block)
