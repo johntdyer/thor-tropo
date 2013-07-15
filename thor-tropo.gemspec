@@ -16,13 +16,13 @@ Gem::Specification.new do |gem|
   gem.version       = ThorTropo::VERSION
 
   #gem.add_dependency 'json', ">= 1.7.0"
-  gem.add_dependency 'thor'
   gem.add_dependency 'chef', "~> 11.0"
   gem.add_dependency 'berkshelf'
-  gem.add_dependency 'thor-scmversion'
   gem.add_dependency 'minitar',           '~> 0.5.4'
-  gem.add_dependency 'aws-sdk'
   gem.add_dependency 'fog'
+  gem.add_dependency 'thor'
+  gem.add_dependency 'thor-scmversion'
+  gem.add_dependency 'thor-foodcritic'
 
   gem.add_development_dependency 'foodcritic'
   gem.add_development_dependency 'webmock'
