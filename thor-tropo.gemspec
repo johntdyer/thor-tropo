@@ -21,7 +21,7 @@ Gem::Specification.new do |gem|
   gem.add_dependency 'berkshelf'
   gem.add_dependency 'thor-scmversion'
   gem.add_dependency 'minitar',           '~> 0.5.4'
-  gem.add_dependency 'aws-s3'
+  gem.add_dependency 'aws-sdk'
 
   gem.add_development_dependency 'foodcritic'
   gem.add_development_dependency 'webmock'

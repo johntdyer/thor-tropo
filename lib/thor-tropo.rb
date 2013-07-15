@@ -12,8 +12,6 @@ require 'zlib'
 
 require 'berkshelf/thor'
 require 'berkshelf/chef'
-require 'digest/md5'
-require 'aws/s3'
 
 require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
 
@@ -45,11 +43,11 @@ require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
     def package
       unless clean?
         say "There are files that need to be committed first.", :red
-        exit 1
+        #exit 1
       end
 
       bundle_cookbook
-     # upload_cookbook @packaged_cookbook, "test"
+      upload_cookbook @packaged_cookbook, "test"
       #  tag_version {
       #    publish_cookbook(options)
       #  }
