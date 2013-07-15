@@ -6,6 +6,7 @@ module ThorTropo
   require 'thor'
   require 'thor/actions'
   require 'thor/scmversion'
+  require 'thor/foodcritic'
   require 'tmpdir'
   require 'archive/tar/minitar'
   require 'zlib'
@@ -29,6 +30,15 @@ module ThorTropo
       :type => :boolean,
       :aliases => "-v",
       :default => false
+
+    desc "package", "Package cookbooks and upload to S3"
+
+    method_option :"version-override",
+      :type    => :string,
+      :aliases => "-V",
+      :default => nil,
+      :desc    => "Force override of version number",
+      :banner  => "Force override of cookbook version"
 
     method_option :force,
       :type    => :boolean,
@@ -57,7 +67,12 @@ module ThorTropo
       :desc     => "Delete lockfile before running `Berks install`",
       :banner   => "Delete lockfile before running `Berks install`"
 
-    desc "package", "Package cookbooks and upload to S3"
+    # def version
+    #   OLDVERSION=`sed -n -e "s/version.*\"\(.*\)\"/\1/p" metadata.rb`
+    #   sed -ie "s/\(version *\)\".*\"/\1\"$OLDVERSION\"/" metadata.rb
+    #   git add metadata.rb
+    # end
+
 
     def package
 
@@ -140,8 +155,12 @@ module ThorTropo
       end
 
       def current_version
-        metadata = Ridley::Chef::Cookbook::Metadata.from_file(File.join(options[:called_path],"metadata.rb"))
-        metadata.version
+        if options[:"version-override"]
+          options[:"version-override"]
+        else
+          metadata = Ridley::Chef::Cookbook::Metadata.from_file(File.join(options[:called_path],"metadata.rb"))
+          metadata.version
+        end
       end
 
       def tag_version
