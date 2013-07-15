@@ -5,7 +5,7 @@ module ThorTropo
 
 
       require 'digest/md5'
-      require 'aws-sdk'
+      require 'fog'
       require 'mime/types'
 
       def initialize(opts={})
@@ -28,11 +28,16 @@ module ThorTropo
       private
 
         def setup_connection(u,p)
-           AWS::S3.new(
-            :access_key_id => u
-            :secret_access_key p
-          )
+          connection = Fog::Storage.new({
+            :provider                 => 'AWS',
+            :aws_access_key_id        => u,
+            :aws_secret_access_key    => p
+          })
+
+
         end
+
+
 
         def upload_cookbooks(local_file)
           get_folder_name = "test"
@@ -66,14 +71,20 @@ module ThorTropo
         end
 
         def ensure_bucket_exists(bucket_name)
-          bucket = @s3.buckets[bucket_name]
 
-          # If the bucket doesn't exist, create it
-          unless bucket.exists?
-            say "Bucket not found, creating it ", :yellow
-            @s3.buckets.create(bucket)
-          end
-          return bucket
+          directory = @connection.directories.create(
+              :key    => "thor-#{Time.now.to_i}", # globally unique name
+              :public => true
+          )
+
+          # bucket = @s3.buckets[bucket_name]
+
+          # # If the bucket doesn't exist, create it
+          # unless bucket.exists?
+          #   say "Bucket not found, creating it ", :yellow
+          #   @s3.buckets.create(bucket)
+          # end
+          # return bucket
         end
 
         def test_file(opts={})
