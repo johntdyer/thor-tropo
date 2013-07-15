@@ -31,7 +31,7 @@ module ThorTropo
            AWS::S3.new(
             :access_key_id => u
             :secret_access_key p
-          }
+          )
         end
 
         def upload_cookbooks(local_file)
