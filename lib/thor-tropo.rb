@@ -9,13 +9,10 @@ require 'thor/scmversion'
 require 'tmpdir'
 require 'archive/tar/minitar'
 require 'zlib'
-
 require 'berkshelf/thor'
 require 'berkshelf/chef'
 
 require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
-
-
 
   class Tasks < Thor
     include Thor::Actions
@@ -30,24 +27,38 @@ require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
       :aliases => "-v",
       :default => false
 
-
     namespace "tropo"
 
-    desc "bump", "Bump version"
-    def bump
-      puts "This should bump the version in the metatdata.rb file... eventually"
-    end
+    method_option :force,
+      :type    => :boolean,
+      :aliases => "-f",
+      :default => false,
+      :desc    => "Force override of any files on s3 without confirmation",
+      :banner  => "Force overrides of existing files"
 
+    method_option :ignore,
+      :type     => :boolean,
+      :aliases  => "-i",
+      :default  => false,
+      :desc     => "Ignore any dirty files in directory and package anyways",
+      :banner   => "Ignore dirty repository"
 
     desc "package", "Package cookbook"
+
     def package
-      unless clean?
-        say "There are files that need to be committed first.", :red
-        #exit 1
+
+      require 'pry'
+      @config = ThorTropo::Configuartion.new(options[:called_path])
+      binding.pry
+      unless options[:ignore]
+        unless clean?
+          say "There are files that need to be committed first.", :red
+          exit 1
+        end
       end
 
       bundle_cookbook
-      upload_cookbook @packaged_cookbook, "test"
+      upload_cookbook @packaged_cookbook, "test", {:force => options[:force]}
       #  tag_version {
       #    publish_cookbook(options)
       #  }
@@ -67,9 +78,9 @@ require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
 
     no_tasks do
 
-      def upload_cookbook(local_file,path)
-        @uploader = ThorTropo::Uploader.new
-        @uploader.upload :local_file => local_file, :path => path
+      def upload_cookbook(local_file,path,opts={})
+        @uploader = ThorTropo::Uploader.new :access_key => ENV['AWS_ACCESS_KEY'], :secret_key => ENV['AWS_SECRET_KEY']
+        @uploader.upload :local_file => local_file, :path => path, :force => options[:force]
       end
 
       def clean?
@@ -77,6 +88,7 @@ require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
       end
 
       def bundle_cookbook
+        say "[TROPO] - Packaging cookbooks from Berksfile", :blue
         @tmp_dir = Dir.mktmpdir
         opts = {
           berksfile: File.join(options[:called_path],"/Berksfile"),

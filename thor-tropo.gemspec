@@ -15,7 +15,7 @@ Gem::Specification.new do |gem|
   gem.require_paths = ["lib","bin"]
   gem.version       = ThorTropo::VERSION
 
-  gem.add_dependency 'json', ">= 1.7.0"
+  #gem.add_dependency 'json', ">= 1.7.0"
   gem.add_dependency 'thor'
   gem.add_dependency 'chef', "~> 11.0"
   gem.add_dependency 'berkshelf'
@@ -33,4 +33,5 @@ Gem::Specification.new do |gem|
   gem.add_development_dependency 'rspec'
   gem.add_development_dependency "bundler", "~> 1.3"
   gem.add_development_dependency "rake"
+  gem.add_development_dependency "pry"
 end
