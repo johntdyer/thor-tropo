@@ -1,18 +1,18 @@
 module ThorTropo
 
 
-$:.unshift  File.expand_path('../thor-tropo', __FILE__)
+  $:.unshift  File.expand_path('../thor-tropo', __FILE__)
 
-require 'thor'
-require 'thor/actions'
-require 'thor/scmversion'
-require 'tmpdir'
-require 'archive/tar/minitar'
-require 'zlib'
-require 'berkshelf/thor'
-require 'berkshelf/chef'
-require 'uploader'
-require 'configuration'
+  require 'thor'
+  require 'thor/actions'
+  require 'thor/scmversion'
+  require 'tmpdir'
+  require 'archive/tar/minitar'
+  require 'zlib'
+  require 'berkshelf/thor'
+  require 'berkshelf/chef'
+  require 'uploader'
+  require 'configuration'
 
   class Tasks < Thor
     include Thor::Actions
@@ -93,9 +93,9 @@ require 'configuration'
 
       def upload_cookbook(local_file,path,opts={})
         uploader = ThorTropo::Uploader.new({
-          :access_key => $config.aws_key,
-          :secret_key => $config.aws_secret,
-          :bucket     => $config.bucket_name
+                                             :access_key => $config.aws_key,
+                                             :secret_key => $config.aws_secret,
+                                             :bucket     => $config.bucket_name
         })
 
         uploader.upload :local_file => local_file, :path => path, :force => options[:force], :noop=>options[:noop]

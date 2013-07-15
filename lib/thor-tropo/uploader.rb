@@ -7,8 +7,6 @@ module ThorTropo
     require 'fog'
     require 'mime/types'
 
-    require 'pry'
-
     no_commands {
 
       def initialize(opts={})
