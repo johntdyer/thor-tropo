@@ -11,9 +11,8 @@ require 'archive/tar/minitar'
 require 'zlib'
 require 'berkshelf/thor'
 require 'berkshelf/chef'
-
-require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
-require File.expand_path('../thor-tropo/configuration.rb', __FILE__)
+require 'uploader'
+require 'configuration'
 
   class Tasks < Thor
     include Thor::Actions
@@ -37,6 +36,12 @@ require File.expand_path('../thor-tropo/configuration.rb', __FILE__)
       :desc    => "Force override of any files on s3 without confirmation",
       :banner  => "Force overrides of existing files"
 
+    method_option :noop,
+      :type    => :boolean,
+      :aliases => "-n",
+      :default => false,
+      :desc    => "NO-OP mode, dont actually upload anything"
+
     method_option :ignore,
       :type     => :boolean,
       :aliases  => "-i",
@@ -44,13 +49,19 @@ require File.expand_path('../thor-tropo/configuration.rb', __FILE__)
       :desc     => "Ignore any dirty files in directory and package anyways",
       :banner   => "Ignore dirty repository"
 
-    desc "package", "Package cookbook"
+    method_option :clean_mode,
+      :type     => :boolean,
+      :aliases  => "-c",
+      :default  => false,
+      :desc     => "Delete lockfile before running `Berks install`",
+      :banner   => "Delete lockfile before running `Berks install`"
+
+    desc "package", "Package cookbooks and upload to S3"
 
     def package
 
-      require 'pry'
-      @config = ThorTropo::Configuration.new(options[:called_path])
-      binding.pry
+      $config = ThorTropo::Configuration.new(options[:called_path])
+
       unless options[:ignore]
         unless clean?
           say "There are files that need to be committed first.", :red
@@ -59,7 +70,8 @@ require File.expand_path('../thor-tropo/configuration.rb', __FILE__)
       end
 
       bundle_cookbook
-      upload_cookbook @packaged_cookbook, "test", {:force => options[:force]}
+
+      upload_cookbook @packaged_cookbook, $config.project_name, {:force => options[:force],:noop => options[:noop]}
       #  tag_version {
       #    publish_cookbook(options)
       #  }
@@ -80,16 +92,34 @@ require File.expand_path('../thor-tropo/configuration.rb', __FILE__)
     no_tasks do
 
       def upload_cookbook(local_file,path,opts={})
-        @uploader = ThorTropo::Uploader.new :access_key => ENV['AWS_ACCESS_KEY'], :secret_key => ENV['AWS_SECRET_KEY']
-        @uploader.upload :local_file => local_file, :path => path, :force => options[:force]
+        uploader = ThorTropo::Uploader.new({
+          :access_key => $config.aws_key,
+          :secret_key => $config.aws_secret,
+          :bucket     => $config.bucket_name
+        })
+
+        uploader.upload :local_file => local_file, :path => path, :force => options[:force], :noop=>options[:noop]
       end
 
       def clean?
         sh_with_excode("git diff --exit-codeBerkshelf")[1] == 0
       end
 
+      def clean_lockfile
+        berksfile = "#{options[:called_path]}/Berksfile.lock"
+
+        if File.exists? berksfile
+          say "[ TROPO ] - Removing Berksfile.lock before running Berkshelf", :green
+          remove_file berksfile
+        else
+          say "[ TROPO ] - Unable to find berksfile to delete - [ #{berksfile} ]", :yellow
+        end
+      end
+
       def bundle_cookbook
-        say "[TROPO] - Packaging cookbooks from Berksfile", :blue
+        clean_lockfile if options[:clean_mode]
+
+        say "[ TROPO ] - Packaging cookbooks from Berksfile", :blue
         @tmp_dir = Dir.mktmpdir
         opts = {
           berksfile: File.join(options[:called_path],"/Berksfile"),
