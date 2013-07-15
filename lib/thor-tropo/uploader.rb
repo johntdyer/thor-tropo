@@ -9,10 +9,7 @@ module ThorTropo
       require 'mime/types'
 
       def initialize(opts={})
-        @s3 = AWS::S3::Base.establish_connection!(
-          :access_key_id     => ENV['AWS_ACCESS_KEY'],
-          :secret_access_key => ENV['AWS_SECRET_KEY']
-        )
+        @s3 = setup_connection(u,p)
 
         @bucket_name = ensure_bucket_exists( opts[:bucket] || 'artifacts.voxeolabs.net' )
       end
@@ -29,6 +26,14 @@ module ThorTropo
 
 
       private
+
+        def setup_connection(u,p)
+           AWS::S3.new(
+            :access_key_id => u
+            :secret_access_key p
+          }
+        end
+
         def upload_cookbooks(local_file)
           get_folder_name = "test"
           ## Only upload files, we're not interested in directories
@@ -74,7 +79,10 @@ module ThorTropo
         def test_file(opts={})
           #get the S3 file (object)
           begin
-            object = AWS::S3::S3Object.find(opts[:remote_file], @bucket_name)
+            bucket = ensure_bucket_exists(@bucket_name)
+            bucket.objects[opts[:remote_file]].metadata['etag'].gsub('"', '')
+
+            #object = AWS::S3::S3Object.find(opts[:remote_file], @bucket_name)
             #separate the etag object, and remove the extra quotations
             etag = object.about['etag'].gsub('"', '')
             digest = Digest::MD5.hexdigest(File.read(opts[:local_file]))
