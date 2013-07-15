@@ -13,6 +13,7 @@ require 'berkshelf/thor'
 require 'berkshelf/chef'
 
 require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
+require File.expand_path('../thor-tropo/configuration.rb', __FILE__)
 
   class Tasks < Thor
     include Thor::Actions
@@ -48,7 +49,7 @@ require File.expand_path('../thor-tropo/uploader.rb', __FILE__)
     def package
 
       require 'pry'
-      @config = ThorTropo::Configuartion.new(options[:called_path])
+      @config = ThorTropo::Configuration.new(options[:called_path])
       binding.pry
       unless options[:ignore]
         unless clean?
