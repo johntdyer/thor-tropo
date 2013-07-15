@@ -22,9 +22,15 @@ module ThorTropo
 
     namespace "tropo"
 
+    # class_option :called_path,
+    #   :type => :string,
+    #   :default => Dir.pwd
     class_option :called_path,
-      :type => :string,
-      :default => Dir.pwd
+      :type    => :string,
+      :aliases => "-d",
+      :default => Dir.pwd,
+      :desc    => "Directory of your Berksfile",
+      :banner  => "Directory of your Berksfile"
 
     class_option :verbose,
       :type => :boolean,
@@ -67,16 +73,10 @@ module ThorTropo
       :desc     => "Delete lockfile before running `Berks install`",
       :banner   => "Delete lockfile before running `Berks install`"
 
-    # def version
-    #   OLDVERSION=`sed -n -e "s/version.*\"\(.*\)\"/\1/p" metadata.rb`
-    #   sed -ie "s/\(version *\)\".*\"/\1\"$OLDVERSION\"/" metadata.rb
-    #   git add metadata.rb
-    # end
-
-
     def package
 
-      $config = ThorTropo::Configuration.new(options[:called_path])
+      #$config = ThorTropo::Configuration.new(options[:called_path])
+      $config = ThorTropo::Configuration.new(source_root)
 
       unless clean?
         unless options[:ignore_dirty]
@@ -85,14 +85,20 @@ module ThorTropo
         end
       end
 
-      bundle_cookbook
+      tag_version {
+        bundle_cookbook
+        upload_cookbook @packaged_cookbook, $config.project_name, {:force => options[:force],:noop => options[:noop]}
+      }
 
-      upload_cookbook @packaged_cookbook, $config.project_name, {:force => options[:force],:noop => options[:noop]}
-      #  tag_version {
-      #    publish_cookbook(options)
-      #  }
     end
 
+
+
+    # def version
+    #   OLDVERSION=`sed -n -e "s/version.*\"\(.*\)\"/\1/p" metadata.rb`
+    #   sed -ie "s/\(version *\)\".*\"/\1\"$OLDVERSION\"/" metadata.rb
+    #   git add metadata.rb
+    # end
 
     # desc "build", "Package cookbook"
 
@@ -118,15 +124,17 @@ module ThorTropo
       end
 
       def clean?
-        sh_with_excode("cd #{options[:called_path]}; git diff --exit-code")[1] == 0
+        #sh_with_excode("cd #{options[:called_path]}; git diff --exit-code")[1] == 0
+        sh_with_excode("cd #{source_root}; git diff --exit-code")[1] == 0
       end
 
       def clean_lockfile
-        berksfile = "#{options[:called_path]}/Berksfile.lock"
+        #berksfile = "#{options[:called_path]}/Berksfile.lock"
+        berksfile = "#{source_root}/Berksfile.lock"
 
         if File.exists? berksfile
           say "[ TROPO ] - Removing Berksfile.lock before running Berkshelf", :blue
-          remove_file berksfile
+          remove_file(berksfile) unless options[:noop]
         else
           say "[ TROPO ] - Unable to find berksfile to delete - [ #{berksfile} ]", :yellow
         end
@@ -138,13 +146,14 @@ module ThorTropo
         say "[ TROPO ] - Packaging cookbooks from Berksfile", :blue
         @tmp_dir = Dir.mktmpdir
         opts = {
-          berksfile: File.join(options[:called_path],"/Berksfile"),
+          #berksfile: File.join(options[:called_path],"/Berksfile"),
+          berksfile: File.join(source_root,"/Berksfile"),
           path: "#{@tmp_dir}/cookbooks"
         }
 
         invoke("berkshelf:install", [], opts)
-        output   = File.expand_path(File.join(@tmp_dir, "#{options[:called_path].split("/")[-1]}-#{current_version}.tar.gz"))
-
+        #output   = File.expand_path(File.join(@tmp_dir, "#{options[:called_path].split("/")[-1]}-#{current_version}.tar.gz"))
+        output   = File.expand_path(File.join(@tmp_dir, "#{source_root.split("/")[-1]}-#{current_version}.tar.gz"))
 
         Dir.chdir(@tmp_dir) do |dir|
           tgz = Zlib::GzipWriter.new(File.open(output, 'wb'))
@@ -158,25 +167,35 @@ module ThorTropo
         if options[:"version-override"]
           options[:"version-override"]
         else
-          metadata = Ridley::Chef::Cookbook::Metadata.from_file(File.join(options[:called_path],"metadata.rb"))
+          #metadata = Ridley::Chef::Cookbook::Metadata.from_file(File.join(options[:called_path],"metadata.rb"))
+          metadata = Ridley::Chef::Cookbook::Metadata.from_file(File.join(source_root,"metadata.rb"))
           metadata.version
         end
       end
 
       def tag_version
-        sh "git tag -a -m \"Version #{current_version}\" #{current_version}"
-        say "Tagged: #{current_version}", :green
+        sh "git tag -a -m \"Version #{current_version}\" #{current_version}" unless options[:noop]
+        say "[ TROPO ] - Tagged: #{current_version}", :blue
         yield if block_given?
-        sh "git push --tags"
+        sh "git push --tags" unless options[:noop]
       rescue => e
-        say "Untagging: #{current_version} due to error", :red
+        say "[ TROPO ] - Untagging: #{current_version} due to error", :red
         sh_with_excode "git tag -d #{current_version}"
-        say e, :red
+        say "[ TROPO ] - #{e}", :red
         exit 1
       end
 
+
+      ## Get the directory Thor script was called from
       def source_root
-        options[:called_path]
+
+        berks_path = File.expand_path(options[:called_path])
+        if File.exists? berks_path
+          berks_path
+        else
+          raise Errno::ENOENT, "#{berks_path} does not contain a Berksfile"
+        end
+        #File.expand_path(Dir.pwd)
       end
 
       def sh(cmd, dir = source_root, &block)
@@ -196,11 +215,6 @@ module ThorTropo
         }
 
         [ outbuf, $? ]
-      end
-
-      def cleanup
-        FileUtils.rm_r(pkg_path, :force => true)
-        FileUtils.mkdir_p pkg_path
       end
 
     end

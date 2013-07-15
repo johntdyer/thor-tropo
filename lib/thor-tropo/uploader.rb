@@ -78,7 +78,7 @@ module ThorTropo
         local_file  = opts[:local_file]
         remote_file = opts[:remote_file]
 
-        say "[ TROPO ] - Uploading file. [#{File.basename(opts[:local_file])}", :blue
+        say "[ TROPO ] - Uploading file. [ #{File.basename(opts[:local_file])} ]", :blue
         unless opts[:noop]
           file = @bucket_name.files.create(
             :key    => remote_file,
