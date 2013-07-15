@@ -18,6 +18,9 @@ module ThorTropo
     include Thor::Actions
 
     @packaged_cookbook = nil
+
+    namespace "tropo"
+
     class_option :called_path,
       :type => :string,
       :default => Dir.pwd
@@ -26,8 +29,6 @@ module ThorTropo
       :type => :boolean,
       :aliases => "-v",
       :default => false
-
-    namespace "tropo"
 
     method_option :force,
       :type    => :boolean,
@@ -42,7 +43,7 @@ module ThorTropo
       :default => false,
       :desc    => "NO-OP mode, dont actually upload anything"
 
-    method_option :ignore,
+    method_option :ignore_dirty,
       :type     => :boolean,
       :aliases  => "-i",
       :default  => false,
@@ -62,8 +63,8 @@ module ThorTropo
 
       $config = ThorTropo::Configuration.new(options[:called_path])
 
-      unless options[:ignore]
-        unless clean?
+      unless clean?
+        unless options[:ignore_dirty]
           say "There are files that need to be committed first.", :red
           exit 1
         end
@@ -102,14 +103,14 @@ module ThorTropo
       end
 
       def clean?
-        sh_with_excode("git diff --exit-codeBerkshelf")[1] == 0
+        sh_with_excode("cd #{options[:called_path]}; git diff --exit-code")[1] == 0
       end
 
       def clean_lockfile
         berksfile = "#{options[:called_path]}/Berksfile.lock"
 
         if File.exists? berksfile
-          say "[ TROPO ] - Removing Berksfile.lock before running Berkshelf", :green
+          say "[ TROPO ] - Removing Berksfile.lock before running Berkshelf", :blue
           remove_file berksfile
         else
           say "[ TROPO ] - Unable to find berksfile to delete - [ #{berksfile} ]", :yellow
