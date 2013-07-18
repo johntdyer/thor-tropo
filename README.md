@@ -73,6 +73,23 @@ If you run thor tropo:package from ~/somewhere/.deployer then the bucket_name va
     Package cookbooks using Berkshelf and upload file to s3 bucket
 
 
+## Gotcha's
+
+#### Search Priorities
+
+Then you can run thor-tropo from the model project root once and it will package both cookbooks.  However there is some logic here...
+
+* Use path provided by user via --berkspath flag
+* If there is a Berksfile in the current working directory use that
+* Use .deployer file config for finding cookbooks to package ( Example below of this .deployer config )
+
+`~/my_deployment_model/.deploy`
+
+    project_name: tropo/12.2.1/cookbooks/my_deployment_model
+    cookbooks:
+      - runtime_server
+      - gateway_server    
+
 ## Contributing
 
 1. Fork it

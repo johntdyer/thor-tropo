@@ -6,7 +6,7 @@ module ThorTropo
     require 'pathname'
     require 'yaml'
 
-    attr_reader :bucket_name, :aws_secret, :aws_key, :project_name
+    attr_reader :bucket_name, :aws_secret, :aws_key, :project_name, :cookbooks
 
     def initialize(path)
       file_name=".deployer"
@@ -38,6 +38,10 @@ module ThorTropo
 
       if config['project_name']
         @project_name = config['project_name'] unless @project_name
+      end
+
+      if config['cookbooks']
+        @cookbooks = config['cookbooks'] unless @cookbooks
       end
 
     end
