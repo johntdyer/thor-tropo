@@ -1,3 +1,7 @@
+# 2.0.1
+
+* Fixed issue with using IAM profiles for uploads
+
 # 2.0.0
 
 * Support multiple cookbooks via .deployer

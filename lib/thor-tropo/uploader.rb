@@ -11,9 +11,11 @@ module ThorTropo
 
       def initialize(opts={})
         @debug_mode   = opts[:debug_mode]
+        @use_iam      = opts[:use_iam]
+
         @connection   = setup_connection(opts[:access_key],opts[:secret_key])
         @bucket_name  = get_bucket( opts[:bucket] || 'artifacts.voxeolabs.net' )
-        @use_iam      = opts[:use_iam]
+
       end
 
       def upload(opts={})
@@ -57,19 +59,18 @@ module ThorTropo
       private
 
       def setup_connection(u,p)
+
+        fog_args = { :provider => 'AWS' }
+
         if @use_iam
-          opts = {
-            :provider        => 'AWS',
-            :use_iam_profile => true
-          }
+          fog_args[:use_iam_profile] = true
         else
-          opts = {
-            :provider                 => 'AWS',
-            :aws_access_key_id        => u,
-            :aws_secret_access_key    => p
-          }
+          fog_args[:aws_access_key_id]     = u
+          fog_args[:aws_secret_access_key] = p
         end
-        Fog::Storage.new(opts)
+
+        Fog::Storage.new fog_args
+
       end
 
       def get_bucket(bucket_name)
