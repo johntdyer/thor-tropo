@@ -60,7 +60,7 @@ module ThorTropo
 
       def setup_connection(u,p)
 
-        fog_args = { :provider => 'AWS' }
+        fog_args = { :provider => 'AWS', path_style: !ENV['FOG_USE_PATH_STYLE'].nil? }
 
         if @use_iam
           fog_args[:use_iam_profile] = true
@@ -105,7 +105,7 @@ module ThorTropo
           public_url = " *** NOOP ** /#{remote_file}"
 
         end
-          say "[ TROPO ] - Public URL: #{public_url}", :blue
+          say "[ TROPO ] - Public URL: #{public_url.gsub("https","http")}", :blue
 
       end
 
